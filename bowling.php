@@ -6,19 +6,7 @@ class Game
 
     public function __construct()
     {
-        $this->frames = [
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame()
-        ];
-
+        $this->initializeFrames();
         $this->currentFrame()->start();
     }
 
@@ -42,6 +30,7 @@ class Game
         if ($this->gameIsNotOver()) {
             throw new CantScore;
         }
+
         return array_reduce($this->frames, function ($score, $frame) {
             return $score + $frame->totalPins();
         }, 0);
@@ -80,6 +69,22 @@ class Game
     private function gameIsOver()
     {
         return $this->currentFrame == 9 && !$this->currentFrame()->isAcceptingRolls();
+    }
+
+    private function initializeFrames(): array
+    {
+        return $this->frames = [
+            new Frame(),
+            new Frame(),
+            new Frame(),
+            new Frame(),
+            new Frame(),
+            new Frame(),
+            new Frame(),
+            new Frame(),
+            new Frame(),
+            new Frame()
+        ];
     }
 }
 
@@ -186,9 +191,7 @@ class BonusRoll extends Roll
 
     private function sumOfBonusRolls($rolls)
     {
-        $bonusRolls = $this->bonusRolls($rolls);
-
-        return array_reduce($bonusRolls, function ($bonusRollTotal, $roll) {
+        return array_reduce($this->bonusRolls($rolls), function ($bonusRollTotal, $roll) {
             return $bonusRollTotal + $roll->pinCount();
         }, 0);
     }
