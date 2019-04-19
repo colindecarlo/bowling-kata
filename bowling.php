@@ -36,6 +36,7 @@ class Game
         if ($this->currentFrame()) {
             throw new CannotScoreWhileInProgress;
         }
+
         return array_reduce($this->frames, function ($score, $frame) {
             return $score + $this->getScoreStrategy($frame)->score($frame);
         }, 0);
@@ -56,12 +57,12 @@ class Game
             case Frame::TENTH:
                 return new TenthFrameScoringStrategy;
             case Frame::SPARE:
-                return new SpareFrameScoringStrategy($this->nextFrame($frame));
+                return new FrameWithBonusRollsScoringStrategy([$this->nextFrame($frame)->firstRoll()]);
             case Frame::STRIKE:
                 $nextFrame = $this->nextFrame($frame);
                 $bonusRolls = [$nextFrame->firstRoll()];
                 $bonusRolls[] = $nextFrame->isStrike() ? $this->nextFrame($nextFrame)->firstRoll() : $nextFrame->secondRoll();
-                return new StrikeFrameScoringStrategy($bonusRolls);
+                return new FrameWithBonusRollsScoringStrategy($bonusRolls);
             default:
                 return new OpenFrameScoringStrategy;
         }
@@ -211,25 +212,7 @@ class OpenFrameScoringStrategy
     }
 }
 
-class SpareFrameScoringStrategy
-{
-    /**
-     * @var Frame
-     */
-    private $nextFrame;
-
-    public function __construct(Frame $nextFrame)
-    {
-        $this->nextFrame = $nextFrame;
-    }
-
-    public function score(Frame $frame)
-    {
-        return Frame::TOTAL_PINS + $this->nextFrame->firstRoll();
-    }
-}
-
-class StrikeFrameScoringStrategy
+class FrameWithBonusRollsScoringStrategy
 {
     private $bonusRolls;
 
