@@ -54,8 +54,6 @@ class Game
     private function getScoreStrategy($frame)
     {
         switch ($frame->type()) {
-            case Frame::TENTH:
-                return new TenthFrameScoringStrategy;
             case Frame::SPARE:
                 return new FrameWithBonusRollsScoringStrategy([$this->nextFrame($frame)->firstRoll()]);
             case Frame::STRIKE:
@@ -224,14 +222,6 @@ class FrameWithBonusRollsScoringStrategy
     public function score(Frame $frame)
     {
         return Frame::TOTAL_PINS + array_sum($this->bonusRolls);
-    }
-}
-
-class TenthFrameScoringStrategy
-{
-    public function score(Frame $frame)
-    {
-        return $frame->totalPins();
     }
 }
 
