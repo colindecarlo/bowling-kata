@@ -2,13 +2,7 @@
 
 class Game
 {
-    private $currentFrame = 0;
     private $frames = [];
-
-    public function __construct()
-    {
-        $this->initializeFrames();
-    }
 
     public function roll($pinCount)
     {
@@ -16,12 +10,12 @@ class Game
             throw new GameIsOver;
         }
 
-        foreach ($this->framesAcceptingRolls() as $frame) {
-            $frame->roll($pinCount);
+        if ($this->shouldStartNextFrame()) {
+            $this->startNextFrame();
         }
 
-        if ($this->shouldStartNextFrame()) {
-            $this->currentFrame++;
+        foreach ($this->framesAcceptingRolls() as $frame) {
+            $frame->roll($pinCount);
         }
     }
 
@@ -31,26 +25,25 @@ class Game
             throw new CantScore;
         }
 
-        return array_reduce($this->frames(), function ($score, $frame) {
+        return array_reduce($this->frames, function ($score, $frame) {
             return $score + $frame->totalPins();
         }, 0);
     }
 
-    private function frames()
-    {
-        return array_slice($this->frames, 0, $this->currentFrame + 1);
-    }
-
     private function framesAcceptingRolls()
     {
-        return array_filter($this->frames(), function ($frame) {
+        return array_filter($this->frames, function ($frame) {
             return $frame->isAcceptingRolls();
         });
     }
 
     private function shouldStartNextFrame()
     {
-        if ($this->currentFrame == 9) {
+        if ($this->framesPlayed() == 0) {
+            return true;
+        }
+
+        if ($this->framesPlayed() == 10) {
             return false;
         }
 
@@ -63,7 +56,7 @@ class Game
 
     private function currentFrame()
     {
-        return $this->frames[$this->currentFrame];
+        return $this->frames[$this->framesPlayed() - 1];
     }
 
     private function gameIsNotOver()
@@ -73,23 +66,17 @@ class Game
 
     private function gameIsOver()
     {
-        return $this->currentFrame == 9 && !$this->currentFrame()->isAcceptingRolls();
+        return $this->framesPlayed() == 10 && !$this->currentFrame()->isAcceptingRolls();
     }
 
-    private function initializeFrames(): array
+    private function startNextFrame()
     {
-        return $this->frames = [
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame(),
-            new Frame()
-        ];
+        $this->frames[] = new Frame();
+    }
+
+    private function framesPlayed()
+    {
+        return count($this->frames);
     }
 }
 
