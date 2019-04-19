@@ -3,11 +3,11 @@
 class Game
 {
     private $currentFrame = 0;
+    private $frames = [];
 
     public function __construct()
     {
         $this->initializeFrames();
-        $this->currentFrame()->start();
     }
 
     public function roll($pinCount)
@@ -21,7 +21,7 @@ class Game
         }
 
         if ($this->shouldStartNextFrame()) {
-            $this->frames[++$this->currentFrame]->start();
+            $this->currentFrame++;
         }
     }
 
@@ -31,14 +31,19 @@ class Game
             throw new CantScore;
         }
 
-        return array_reduce($this->frames, function ($score, $frame) {
+        return array_reduce($this->frames(), function ($score, $frame) {
             return $score + $frame->totalPins();
         }, 0);
     }
 
+    private function frames()
+    {
+        return array_slice($this->frames, 0, $this->currentFrame + 1);
+    }
+
     private function framesAcceptingRolls()
     {
-        return array_filter($this->frames, function ($frame) {
+        return array_filter($this->frames(), function ($frame) {
             return $frame->isAcceptingRolls();
         });
     }
@@ -91,14 +96,10 @@ class Game
 class Frame
 {
     private $rolls = [];
-    private $acceptingBonusRolls = false;
-    private $acceptingRegularRolls = false;
 
     public function roll($pinCount)
     {
         $this->rolls[] = $this->newRoll($pinCount);
-        $this->acceptingRegularRolls = $this->totalPins() < 10 && count($this->rolls) < 2;
-        $this->acceptingBonusRolls = $this->totalPins() >= 10 && count($this->rolls) < 3;
     }
 
     public function totalPins()
@@ -110,17 +111,12 @@ class Frame
 
     public function isAcceptingRolls()
     {
-        return $this->acceptingRegularRolls || $this->acceptingBonusRolls;
+        return $this->acceptingRegularRolls() || $this->acceptingBonusRolls();
     }
 
     public function isAcceptingOnlyBonusRolls()
     {
-        return $this->acceptingRegularRolls == false && $this->acceptingBonusRolls == true;
-    }
-
-    public function start()
-    {
-        $this->acceptingRegularRolls = true;
+        return $this->acceptingRegularRolls() == false && $this->acceptingBonusRolls() == true;
     }
 
     private function newRoll($pinCount): Roll
@@ -136,6 +132,16 @@ class Frame
         if (count($this->rolls) == 1) {
             return new SecondRoll($this->rolls[0], $pinCount);
         }
+    }
+
+    private function acceptingRegularRolls()
+    {
+        return $this->totalPins() < 10 && count($this->rolls) < 2;
+    }
+
+    private function acceptingBonusRolls()
+    {
+        return $this->totalPins() >= 10 && count($this->rolls) < 3;
     }
 }
 
